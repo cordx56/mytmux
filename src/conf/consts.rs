@@ -2,8 +2,8 @@ use color_hex::color_from_hex;
 use tmux_interface::Colour;
 
 const fn c(hex: [u8; 3]) -> Colour {
-    let r = hex[0] as u32 * 16 * 16;
-    let g = hex[1] as u32 * 16;
+    let r = hex[0] as u32 * 16 * 16 * 16 * 16;
+    let g = hex[1] as u32 * 16 * 16;
     let b = hex[2] as u32;
     Colour::HEX(r + g + b)
 }
