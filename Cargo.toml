@@ -1,0 +1,10 @@
+[package]
+name = "mytmux"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+color-hex = "0.2"
+tmux_interface = "0.3"
