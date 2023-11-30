@@ -1,5 +1,6 @@
 mod bind;
 mod consts;
+pub mod status;
 mod style;
 mod utils;
 

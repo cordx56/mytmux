@@ -1,6 +1,9 @@
 use color_hex::color_from_hex;
 use tmux_interface::Colour;
 
+pub const STYLE_DEFAULT: &str = "default";
+pub const VARIABLE_USER: &str = "user";
+
 const fn c(hex: [u8; 3]) -> Colour {
     let r = hex[0] as u32 * 16 * 16 * 16 * 16;
     let g = hex[1] as u32 * 16 * 16;
@@ -18,3 +21,12 @@ pub const C_PURPLE: Colour = c(color_from_hex!("#c678dd"));
 
 pub const C_DEFAULT_BG: Colour = C_BLACK;
 pub const C_DEFAULT_FG: Colour = C_WHITE;
+
+// Special chars
+pub const RIGHT_TRIANGLE: &str = "\u{e0b0}";
+pub const LOWER_LEFT_TRIANGLE: &str = "\u{e0ba}";
+pub const UPPER_LEFT_TRIANGLE: &str = "\u{e0bc}";
+pub const SLASH: &str = "\u{e0bb}";
+
+pub const LINUX_ICON: &str = "\u{f17c}";
+pub const APPLE_ICON: &str = "\u{f179}";
