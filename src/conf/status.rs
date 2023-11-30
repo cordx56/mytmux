@@ -5,57 +5,64 @@ use super::utils::*;
 use std::env;
 use tmux_interface::*;
 
-pub fn left_accent() -> StyledTexts<'static> {
+pub fn left_accent() -> StyledText<'static> {
     [
-        StyledText::new([Style::Bg(C_BLUE)].into(), " "),
-        "  ".into(),
+        StyledText::styled([Style::Bg(C_BLUE)], " "),
+        StyledText::raw("  "),
     ]
     .into()
 }
-pub fn windows() -> StyledTexts<'static> {
+pub fn right_accent() -> StyledText<'static> {
+    StyledText::styled([Style::Bg(C_RED)], " ")
+}
+pub fn windows() -> StyledText<'static> {
     let window_index = format!("{}", Variable::WindowIndex);
     let window_name = format!("{}", Variable::WindowName);
     let not_current = format!(" {window_index}{SLASH}{window_name} ");
-    let current = StyledTexts::from([
-        StyledText::new([Style::Fg(C_RED)].into(), LOWER_LEFT_TRIANGLE),
-        StyledText::new([Style::Bg(C_RED)].into(), window_index),
-        StyledText::new([Style::Fg(C_RED)].into(), UPPER_LEFT_TRIANGLE),
-        format!("{window_name} ").into(),
+    let current = StyledText::from([
+        StyledText::styled([Style::Fg(C_RED)], LOWER_LEFT_TRIANGLE),
+        StyledText::styled([Style::Bg(C_RED)], window_index),
+        StyledText::styled([Style::Fg(C_RED)], UPPER_LEFT_TRIANGLE),
+        StyledText::raw(format!("{window_name} ")),
     ]);
-    [format!("#{{W:{not_current},{current}}}").into()].into()
+    [StyledText::raw(format!("#{{W:{not_current},{current}}}"))].into()
 }
 
-fn os_icon<'a>() -> StyledTexts<'a> {
+fn os_icon<'a>() -> StyledText<'a> {
     let os = env::consts::OS;
     if os == "linux" {
-        [StyledText::new([Style::Fg(C_YELLOW)].into(), LINUX_ICON).into()].into()
+        [StyledText::styled([Style::Fg(C_YELLOW)], LINUX_ICON)].into()
     } else if os == "macos" {
-        [StyledText::new([Style::Fg(C_PURPLE)].into(), APPLE_ICON).into()].into()
+        [StyledText::styled([Style::Fg(C_PURPLE)], APPLE_ICON)].into()
     } else {
-        ["?".into()].into()
+        [StyledText::raw("?")].into()
     }
 }
 
-fn row0left() -> StyledTexts<'static> {
-    StyledTexts::concat([
+fn row0left() -> StyledText<'static> {
+    [
         left_accent(),
         os_icon(),
-        [" ".into()].into(),
+        StyledText::raw(" "),
         green_right_arrow(format!("{}", Variable::SessionName)),
-        [" ".into()].into(),
+        StyledText::raw(" "),
         windows(),
-    ])
+    ]
+    .into()
 }
-fn row0right() -> StyledTexts<'static> {
-    StyledTexts::new(
-        Styles::from([Style::Align(Align::Right)]),
+fn row0right() -> StyledText<'static> {
+    StyledText::new(
+        [Style::Align(Align::Right)],
         [
-            format!("#{{{}}}@{}  ", VARIABLE_USER, Variable::Host).into(),
-            StyledText::new([Style::Bg(C_RED)].into(), " "),
+            StyledText::raw(format!("#{{{}}}@{}  ", VARIABLE_USER, Variable::Host)),
+            right_accent(),
         ],
     )
 }
 
-pub fn row0() -> StyledTexts<'static> {
-    StyledTexts::concat([row0left(), row0right()])
+pub fn row0() -> StyledText<'static> {
+    [row0left(), row0right()].into()
+}
+pub fn row1() -> StyledText<'static> {
+    [left_accent(), right_accent()].into()
 }

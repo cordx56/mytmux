@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::fmt;
 use tmux_interface::{Style, StyleList};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Styles<'a> {
     style_list: StyleList<'a>,
 }
@@ -11,6 +11,13 @@ pub struct Styles<'a> {
 impl<'a> Styles<'a> {
     pub fn new(style_list: StyleList<'a>) -> Self {
         Self { style_list }
+    }
+    pub fn len(&self) -> usize {
+        if let Some(v) = &self.style_list.styles {
+            v.len()
+        } else {
+            0
+        }
     }
 }
 impl<I> From<I> for Styles<'_>
@@ -36,123 +43,74 @@ impl<'a> From<Styles<'a>> for String {
     }
 }
 
-#[derive(Clone)]
-pub struct StyledText<'a> {
-    styles: Styles<'a>,
-    text: Cow<'a, str>,
+#[derive(Debug, Clone)]
+pub enum StyledText<'a> {
+    Styled(Styles<'a>, Vec<StyledText<'a>>),
+    Raw(Cow<'a, str>),
 }
 
 impl<'a> StyledText<'a> {
-    pub fn new<T>(styles: Styles<'a>, text: T) -> Self
+    pub fn new<S, T>(styles: S, styled_texts: T) -> Self
+    where
+        S: Into<Styles<'a>>,
+        T: Into<StyledText<'a>>,
+    {
+        Self::Styled(styles.into(), vec![styled_texts.into()])
+    }
+    pub fn styled<S, T>(styles: S, raw: T) -> Self
+    where
+        S: Into<Styles<'a>>,
+        T: Into<Cow<'a, str>>,
+    {
+        Self::Styled(styles.into(), vec![Self::raw(raw)])
+    }
+    pub fn raw<T>(raw: T) -> Self
     where
         T: Into<Cow<'a, str>>,
     {
-        Self {
-            styles,
-            text: text.into(),
-        }
+        Self::Raw(raw.into())
     }
 }
-impl<'a, T> From<T> for StyledText<'a>
+impl<'a, I, S> From<I> for StyledText<'a>
 where
-    T: Into<Cow<'a, str>>,
+    S: Into<StyledText<'a>>,
+    I: IntoIterator<Item = S>,
 {
-    fn from(value: T) -> Self {
-        Self {
-            styles: [].into(),
-            text: value.into(),
-        }
+    fn from(value: I) -> Self {
+        Self::Styled([].into(), value.into_iter().map(|st| st.into()).collect())
     }
 }
 impl fmt::Display for StyledText<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "#[{}]#[{}]{}#[{}]#[{}]",
-            Style::PushDefault,
-            self.styles,
-            self.text,
-            STYLE_DEFAULT,
-            Style::PopDefault
-        )
-    }
-}
-impl<'a> From<StyledText<'a>> for String {
-    fn from(value: StyledText<'a>) -> Self {
-        format!("{}", value)
-    }
-}
-
-#[derive(Clone)]
-pub struct StyledTexts<'a> {
-    styles: Option<Styles<'a>>,
-    styled_texts: Vec<StyledText<'a>>,
-}
-
-impl<'a> StyledTexts<'a> {
-    pub fn new<S, I>(styles: S, styled_texts: I) -> Self
-    where
-        S: Into<Styles<'a>>,
-        I: IntoIterator<Item = StyledText<'a>>,
-    {
-        Self {
-            styles: Some(styles.into()),
-            styled_texts: styled_texts.into_iter().collect(),
+        match self {
+            Self::Styled(styles, styled_texts) => {
+                let is_styled = if styles.len() == 0 { false } else { true };
+                if is_styled {
+                    write!(
+                        f,
+                        "#[{}]#[{}]#[{}]",
+                        Style::PushDefault,
+                        styles,
+                        Style::PushDefault
+                    )?;
+                }
+                for st in styled_texts {
+                    write!(f, "{}", st)?;
+                }
+                if is_styled {
+                    write!(
+                        f,
+                        "#[{}]#[{}]#[{}]",
+                        Style::PopDefault,
+                        STYLE_DEFAULT,
+                        Style::PopDefault
+                    )?;
+                }
+                Ok(())
+            }
+            Self::Raw(raw) => {
+                write!(f, "{}", raw)
+            }
         }
-    }
-    pub fn concat<I>(i: I) -> Self
-    where
-        I: IntoIterator<Item = StyledTexts<'a>>,
-    {
-        let mut styled_texts = Vec::new();
-        for v in i.into_iter() {
-            styled_texts.extend(v.styled_texts);
-        }
-        Self {
-            styles: None,
-            styled_texts,
-        }
-    }
-}
-impl<'a, I> From<I> for StyledTexts<'a>
-where
-    I: IntoIterator<Item = StyledText<'a>>,
-{
-    fn from(value: I) -> Self {
-        Self {
-            styles: None,
-            styled_texts: value.into_iter().collect(),
-        }
-    }
-}
-impl fmt::Display for StyledTexts<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(ss) = &self.styles {
-            write!(
-                f,
-                "#[{}]#[{}]#[{}]",
-                Style::PushDefault,
-                ss,
-                Style::PushDefault
-            )?;
-        }
-        for st in self.styled_texts.iter() {
-            write!(f, "{}", st)?;
-        }
-        if self.styles.is_some() {
-            write!(
-                f,
-                "#[{}]#[{}]#[{}]",
-                Style::PopDefault,
-                STYLE_DEFAULT,
-                Style::PopDefault
-            )?;
-        }
-        Ok(())
-    }
-}
-impl<'a> From<StyledTexts<'a>> for String {
-    fn from(value: StyledTexts<'a>) -> Self {
-        format!("{}", value)
     }
 }
