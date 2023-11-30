@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os:
+          - linux
+          - macOS
+        arch:
+          - x64
+          - ARM64
+    runs-on:
+      - self-hosted
+      - ${{ matrix.os }}
+      - ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set rustup profile
+        run: rustup set profile minimal
+      - name: Setup Rust
+        run: rustup install stable
+
+      - name: Build
+        run: cargo build --release
+      - name: Set current target
+        run: >
+          echo "$(uname -s)-$(uname -m)" |
+          awk '{print tolower($0)}' |
+          mv "target/release/mytmuxrs" "mytmuxrs-$(cat)"
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          path: mytmuxrs-*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: mytmuxrs-*
