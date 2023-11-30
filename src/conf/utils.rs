@@ -3,6 +3,8 @@ use std::borrow::Cow;
 use std::fmt;
 use tmux_interface::{Style, StyleList};
 
+pub type N = Cow<'static, str>;
+
 #[derive(Debug, Clone)]
 pub struct Styles<'a> {
     style_list: StyleList<'a>,

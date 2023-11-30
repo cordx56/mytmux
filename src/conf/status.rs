@@ -1,21 +1,55 @@
 use super::consts::*;
-use super::consts::*;
-use super::style::*;
 use super::utils::*;
+use std::borrow::Cow;
 use std::env;
 use tmux_interface::*;
 
-pub fn left_accent() -> StyledText<'static> {
+pub fn set_status() -> TmuxCommands<'static> {
+    let default = Styles::from([Style::Bg(C_DEFAULT_BG), Style::Fg(C_DEFAULT_FG)]);
+    let current_exe = format!("{}", env::current_exe().unwrap().display());
+    let row0 = format!("#({} status 0)", current_exe);
+    let row1 = format!("#({} status 1)", current_exe);
+    SetGlobalSessionOptions::new()
+        .status(None::<N>, Some(Status::TwoRows))
+        .status_style(None::<N>, Some(format!("{}", default)))
+        .status_interval(None::<N>, Some(1))
+        .status_format(None::<N>, Some([row0, row1]))
+        .build()
+}
+
+fn green_right_arrow<'a, S>(s: S) -> StyledText<'a>
+where
+    S: Into<Cow<'a, str>>,
+{
+    let s = s.into();
+    [
+        StyledText::styled(
+            [Style::Bg(C_GREEN), Style::Fg(C_DEFAULT_BG)],
+            format!("{RIGHT_TRIANGLE} "),
+        ),
+        StyledText::styled(
+            [Style::Bg(C_GREEN), Style::Fg(C_DEFAULT_FG)],
+            format!("{s} "),
+        ),
+        StyledText::styled(
+            [Style::Bg(C_DEFAULT_BG), Style::Fg(C_GREEN)],
+            RIGHT_TRIANGLE,
+        ),
+    ]
+    .into()
+}
+
+fn left_accent() -> StyledText<'static> {
     [
         StyledText::styled([Style::Bg(C_BLUE)], " "),
         StyledText::raw("  "),
     ]
     .into()
 }
-pub fn right_accent() -> StyledText<'static> {
+fn right_accent() -> StyledText<'static> {
     StyledText::styled([Style::Bg(C_RED)], " ")
 }
-pub fn windows() -> StyledText<'static> {
+fn windows() -> StyledText<'static> {
     let window_index = format!("{}", Variable::WindowIndex);
     let window_name = format!("{}", Variable::WindowName);
     let not_current = format!(" {window_index}{SLASH}{window_name} ");
