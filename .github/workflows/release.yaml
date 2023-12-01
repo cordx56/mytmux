@@ -16,7 +16,6 @@ jobs:
           - x64
           - ARM64
     runs-on:
-      - self-hosted
       - ${{ matrix.os }}
       - ${{ matrix.arch }}
     steps:
